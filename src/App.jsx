@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Plus, CheckCircle, Circle } from 'lucide-react';
 
 export default function App() {
   const [todos, setTodos] = useState([]);
@@ -65,7 +64,7 @@ export default function App() {
               onClick={addTodo}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
             >
-              <Plus size={20} />
+              ➕
             </button>
           </div>
 
@@ -81,13 +80,9 @@ export default function App() {
                 >
                   <button
                     onClick={() => toggleTodo(todo.id)}
-                    className="text-blue-500 hover:text-blue-600 flex-shrink-0 transition"
+                    className="text-blue-500 hover:text-blue-600 flex-shrink-0 transition text-xl"
                   >
-                    {todo.completed ? (
-                      <CheckCircle size={20} />
-                    ) : (
-                      <Circle size={20} />
-                    )}
+                    {todo.completed ? '✅' : '⭕'}
                   </button>
                   <span
                     className={`flex-1 ${
@@ -100,9 +95,9 @@ export default function App() {
                   </span>
                   <button
                     onClick={() => deleteTodo(todo.id)}
-                    className="text-red-500 hover:text-red-600 flex-shrink-0 transition"
+                    className="text-red-500 hover:text-red-600 flex-shrink-0 transition text-xl"
                   >
-                    <Trash2 size={18} />
+                    🗑️
                   </button>
                 </div>
               ))
