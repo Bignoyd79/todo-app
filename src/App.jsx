@@ -1,36 +1,67 @@
 import { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, push, update, remove } from 'firebase/database';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD1742U1MkAGygCzZ8LoYKrWCPoPTAeUNw",
+  authDomain: "todo-app-4530b.firebaseapp.com",
+  databaseURL: "https://todo-app-4530b-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "todo-app-4530b",
+  storageBucket: "todo-app-4530b.firebasestorage.app",
+  messagingSenderId: "649275124273",
+  appId: "1:649275124273:web:bc0385550cc123f239c310",
+  measurementId: "G-FEZNLV1N4J"
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
 export default function App() {
   const [todos, setTodos] = useState([]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // Załaduj z localStorage przy starcie
   useEffect(() => {
-    const saved = localStorage.getItem('todos');
-    if (saved) {
-      setTodos(JSON.parse(saved));
-    }
+    const todosRef = ref(database, 'todos');
+    const unsubscribe = onValue(todosRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const todosArray = Object.keys(data).map(key => ({
+          id: key,
+          ...data[key]
+        }));
+        setTodos(todosArray);
+      } else {
+        setTodos([]);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
-
-  // Zapisz do localStorage przy każdej zmianie
-  useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]);
 
   const addTodo = () => {
     if (input.trim() === '') return;
-    setTodos([...todos, { id: Date.now(), text: input, completed: false }]);
+    const todosRef = ref(database, 'todos');
+    push(todosRef, {
+      text: input,
+      completed: false,
+      createdAt: new Date().toISOString()
+    });
     setInput('');
   };
 
   const toggleTodo = (id) => {
-    setTodos(todos.map(todo =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    ));
+    const todo = todos.find(t => t.id === id);
+    if (todo) {
+      const todoRef = ref(database, `todos/${id}`);
+      update(todoRef, { completed: !todo.completed });
+    }
   };
 
   const deleteTodo = (id) => {
-    setTodos(todos.filter(todo => todo.id !== id));
+    const todoRef = ref(database, `todos/${id}`);
+    remove(todoRef);
   };
 
   const handleKeyPress = (e) => {
@@ -41,13 +72,21 @@ export default function App() {
 
   const completedCount = todos.filter(t => t.completed).length;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 flex items-center justify-center">
+        <p className="text-gray-600">⏳ Ładowanie...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <div className="max-w-md mx-auto">
         <div className="bg-white rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Moje Zadania</h1>
           <p className="text-gray-500 mb-6">
-            {completedCount} z {todos.length} gotowych
+            {completedCount} z {todos.length} gotowych ☁️
           </p>
 
           {/* Input */}
@@ -62,7 +101,7 @@ export default function App() {
             />
             <button
               onClick={addTodo}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition font-bold"
             >
               ➕
             </button>
@@ -113,6 +152,10 @@ export default function App() {
               />
             </div>
           )}
+
+          <p className="text-xs text-gray-400 mt-6 text-center">
+            Wszystkie dane zapisane w chmurze ☁️
+          </p>
         </div>
       </div>
     </div>
